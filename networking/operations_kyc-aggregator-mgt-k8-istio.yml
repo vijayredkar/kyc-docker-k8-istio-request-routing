@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kyc-aggregator-mgt
+  labels:
+    app: kyc-aggregator-mgt
+    service: kyc-aggregator-mgt
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: kyc-aggregator-mgt
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kyc-aggregator-mgt
+  labels:
+    account: kyc-aggregator-mgt
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kyc-aggregator-mgt
+  labels:
+    app: kyc-aggregator-mgt
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kyc-aggregator-mgt
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: kyc-aggregator-mgt
+        version: v1
+    spec:
+      serviceAccountName: kyc-aggregator-mgt
+      containers:
+      - name: kyc-aggregator-mgt
+        image: vijayredkar/kyc-aggregator-mgt:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        securityContext:
+          runAsUser: 1000
+      volumes:
+      - name: tmp
+        emptyDir: {}
+---

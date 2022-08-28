@@ -1,0 +1,143 @@
+package com.kyc.aggregate.service;
+
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.kyc.aggregate.exception.KycAggregateException;
+import com.kyc.aggregate.repo.model.KycRequest;
+import com.kyc.aggregate.repo.model.KycResponse;
+import com.kyc.aggregate.util.Constants;
+
+@Service
+public class KycAggregateService {
+	
+	Log LOGGER = LogFactory.getLog(KycAggregateService.class);
+
+	public KycResponse processKyc(KycRequest kycReq, String applicationId, String type) throws KycAggregateException  
+	{
+		KycResponse kycResponse = new KycResponse();
+		
+		try 
+		{	
+			RestTemplate restTemplate = new RestTemplate();		    
+			final String URL_CRED_CHK_BASIC = Constants.CREDIT_CHECK_BASIC_WS_URL_BASE +
+								//Constants.CREDIT_CHECK_BASIC_WS_URL_PORT +
+								Constants.CREDIT_CHECK_BASIC_WS_URL_PATH;
+			
+			final String URL_CRED_CHK_ADV = Constants.CREDIT_CHECK_ADVANCED_WS_URL_BASE +
+								//Constants.CREDIT_CHECK_ADVANCED_WS_URL_PORT +
+								Constants.CREDIT_CHECK_ADVANCED_WS_URL_PATH;
+			
+			final String URL_CRED_CHK_UNSPFD = Constants.CREDIT_CHECK_UNSPECIFIED_WS_URL_BASE +
+								//Constants.CREDIT_CHECK_ADVANCED_WS_URL_PORT +
+								Constants.CREDIT_CHECK_UNSPECIFIED_WS_URL_PATH;
+			
+			final String URL_CRED_CHK_TEST = Constants.CREDIT_CHECK_TEST_WS_URL_BASE +
+									//Constants.CREDIT_CHECK_TEST_WS_URL_PORT +
+									Constants.CREDIT_CHECK_TEST_WS_URL_PATH;
+			
+			ResponseEntity<KycResponse> response = null;
+			
+		    URI uri_cred_chk_basic = new URI(URL_CRED_CHK_BASIC);
+		    URI uri_cred_chk_advanced = new URI(URL_CRED_CHK_ADV);
+		    URI uri_cred_chk_unspfd = new URI(URL_CRED_CHK_UNSPFD);		    
+		    URI uri_cred_chk_test = new URI(URL_CRED_CHK_TEST);
+		    
+		    
+		    
+		    
+		    /*
+		    Path sourcePath      = Paths.get("C:\\Vijay\\Java\\projects\\kyc-k8-docker-istio\\kyc-aggregator-mgt\\config.txt");
+		    Stream<String> lines = Files.lines(sourcePath);		     
+		    String url = lines.findFirst().get();
+		    LOGGER.info("\n---- url : "+ url);		    
+		    response = restTemplate.postForEntity(url, kycReq, KycResponse.class);
+			kycResponse = response.getBody();
+			*/
+			
+		    List<String> urlList = new ArrayList<String>();
+		    
+		    urlList.add("http://127.0.0.1:31019/credit-check/basic");
+		    urlList.add("http://192.168.49.2:31019/credit-check/basic");
+		    urlList.add("http://kyc-credit-check-basic:8080");
+		    urlList.add("http://kyc-credit-check-basic:8080/basic");
+		    urlList.add("http://kyc-credit-check-basic/basic");
+		    urlList.add("http://127.0.0.1:8080/credit-check/basic");
+		    
+		   
+			    for(String url : urlList)
+			    {
+			    	try
+				    {
+				    	LOGGER.info("\n----************* url : "+ url);	
+				    	response = restTemplate.postForEntity(url, kycReq, KycResponse.class);
+						kycResponse = response.getBody();
+						
+						LOGGER.info("\n----************* kycResponse : "+ kycResponse);
+					    }
+				    catch(Exception e)
+				    {
+				    	LOGGER.error("\n----************* url invocation failed. Continue to test next. Error: "+ e);
+				    }
+			    }//end for			
+		    
+		    
+		    
+		    LOGGER.info("\n---- uri_cred_chk_basic : "+uri_cred_chk_basic.toString());
+		    LOGGER.info("\n---- uri_cred_chk_advanced : "+uri_cred_chk_advanced.toString());
+		    LOGGER.info("\n---- uri_cred_chk_unspfd : "+uri_cred_chk_unspfd.toString());
+		    
+		    
+		    
+		    if(Constants.CREDIT_CHECK_TYPE_BASIC.equals(type))
+		    {
+		    	response = restTemplate.postForEntity(uri_cred_chk_basic, kycReq, KycResponse.class);
+			    kycResponse = response.getBody();	
+		    }
+		    else if(Constants.CREDIT_CHECK_TYPE_ADVANCED.equals(type))
+		    {
+		    	response = restTemplate.postForEntity(uri_cred_chk_advanced, kycReq, KycResponse.class);
+			    kycResponse = response.getBody();	
+		    }
+		    else if(Constants.CREDIT_CHECK_TYPE_TEST.equals(type))
+		    {
+		    	response = restTemplate.postForEntity(uri_cred_chk_test, kycReq, KycResponse.class);
+			    kycResponse = response.getBody();	
+		    }
+		    else
+		    {
+		    	response = restTemplate.postForEntity(uri_cred_chk_unspfd, kycReq, KycResponse.class);
+			    kycResponse = response.getBody();
+		    	
+		    }
+		    
+		    
+		    
+		    /*
+		    return KycResponse.builder()
+						    .backgroundCheckPass(true)
+						    .build();
+		    */
+		     kycResponse.setBackgroundCheckPass(true);
+		     return kycResponse;
+		     
+		} 
+		catch (Exception e) 
+		{
+			LOGGER.error(Constants.ERROR_MSG_KYC_PROCESSING_OPER_FAILED + " : " +e);
+			throw new KycAggregateException(Constants.ERROR_MSG_KYC_PROCESSING_OPER_FAILED +" - "+ e.getMessage());
+		}
+	}	
+	
+}

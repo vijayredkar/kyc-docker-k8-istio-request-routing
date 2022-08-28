@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: kyc-advanced
+  namespace: default
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - kyc
+  http:
+  - match:
+    - headers:
+        end-user:
+          exact: advanced
+    route:
+    - destination:
+        host: kyc-credit-check-advanced.advanced.svc.cluster.local
+        port:
+          number: 8080
+---

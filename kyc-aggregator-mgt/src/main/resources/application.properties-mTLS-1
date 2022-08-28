@@ -1,0 +1,48 @@
+#via direct springboot
+#server.port=8045
+
+
+debug=true
+logging.level.org.springframework.web=DEBUG
+
+#----------------------------Istio URLs---------------------------
+
+#Istio Base URL [replace  this with your istio-gateway-ip ]                 
+istio-base-url=http://192.168.49.2:
+#mTLS -  http://kyc-credit-check-basic:8080
+istio-base-mtls-url=http://localhost:
+#istio-base-credit-check-basic-mtls-url=http://kyc-credit-check-basic:
+istio-base-credit-check-basic-mtls-url=http://127.0.0.1:
+#istio-base-credit-check-advanced-mtls-url=http://kyc-credit-check-advanced:
+istio-base-credit-check-advanced-mtls-url=http://127.0.0.1:
+
+
+#Istio Gateway Port [replace  this with your istio-gateway-port ]
+istio-gateway-port=31746
+#should match with port forwarding port of basic crd chk namespace
+istio-gateway-credit-check-basic-mtls-port=8080
+#should match with port forwarding port of advanced crd chk namespace
+#istio-gateway-credit-check-advanced-mtls-port=8081
+istio-gateway-credit-check-advanced-mtls-port=8080
+
+
+credit-check-report-uri=/credit-check/report                 
+credit-check-basic-uri=/credit-check/basic
+credit-check-advanced-uri=/credit-check/advanced
+credit-check-unspecified-uri=/credit-check/
+
+
+
+#------------------discard----------------------#
+
+#invoke istio redirection to credit-check-basic svc                 
+credit-check-basic-istio-url=http://192.168.49.2:32011/credit-check/basic
+
+#invoke istio redirection to credit-check-advanced svc
+credit-check-advanced-istio-url=http://192.168.49.2:32011/credit-check/advanced
+
+#invoke 50:50 istio weight distribution between basic:advanced
+#credit-check-generic-istio-url=http://192.168.49.2:32011/credit-check
+credit-check-generic-istio-url=http://192.168.49.2:32011/credit-check/
+
+#------------------discard----------------------#

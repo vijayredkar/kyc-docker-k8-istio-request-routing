@@ -1,0 +1,102 @@
+package com.kyc.aggregate.controller;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kyc.aggregate.exception.KycAggregateException;
+import com.kyc.aggregate.repo.model.KycRequest;
+import com.kyc.aggregate.repo.model.KycResponse;
+import com.kyc.aggregate.service.KycAggregateService;
+import com.kyc.aggregate.util.Constants;
+import com.kyc.aggregate.util.ErrorResponse;
+import com.kyc.aggregate.util.ErrorsUtil;
+
+@RestController
+@RequestMapping(value = "/kyc/v1/")
+public class KycAggregateController {
+
+	Log LOGGER = LogFactory.getLog(KycAggregateController.class);
+	
+	@Autowired
+	KycAggregateService kycAggrSvc;
+	
+	@Autowired
+	ObjectMapper mapper;
+
+
+	@PostMapping(path = "/customer" ,
+					consumes = MediaType.APPLICATION_JSON_VALUE,
+					produces = MediaType.APPLICATION_JSON_VALUE) 
+		public ResponseEntity<String> processCustomer(@RequestBody KycRequest kycRequest) throws JsonProcessingException
+		{
+		
+			KycResponse kycResponse = null;
+					
+			LOGGER.info("\n---- Kyc Processing initiated");		
+			String response = null;
+			//KycResponse kycResponse = new KycResponse();
+			
+			try 
+			{		
+			 kycResponse = kycAggrSvc.processKyc(kycRequest);
+			}
+			catch (KycAggregateException e) 
+			{
+				ErrorResponse errResponse = ErrorsUtil.constructErrorResponse(e.getMessage());
+				
+				response = mapper.writeValueAsString(errResponse);
+				LOGGER.error(Constants.ERROR_MSG_KYC_PROCESSING_OPER_FAILED + " : " +e.getMessage());
+				return new ResponseEntity<String>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+			
+			LOGGER.info(response + "  "+kycResponse.toString());
+			
+			response = mapper.writeValueAsString(kycResponse);
+			return new ResponseEntity<String>(response, HttpStatus.OK);
+		}
+	
+		@GetMapping(path = "/customer" ,
+			consumes = MediaType.APPLICATION_JSON_VALUE,
+			produces = MediaType.APPLICATION_JSON_VALUE) 
+		public ResponseEntity<String> getKyc() throws JsonProcessingException
+		{
+		
+			KycResponse kycResponse = null;
+					
+			LOGGER.info("\n---- Kyc getKyc initiated");		
+			String response = null;
+			//KycResponse kycResponse = new KycResponse();
+			
+			try 
+			{		
+				KycRequest kycRequest = new KycRequest();
+				kycResponse = kycAggrSvc.processKyc(kycRequest);
+			}
+			catch (KycAggregateException e) 
+			{
+				ErrorResponse errResponse = ErrorsUtil.constructErrorResponse(e.getMessage());
+				
+				response = mapper.writeValueAsString(errResponse);
+				LOGGER.error(Constants.ERROR_MSG_KYC_PROCESSING_OPER_FAILED + " : " +e.getMessage());
+				return new ResponseEntity<String>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+			
+			LOGGER.info(response + "  "+kycResponse.toString());
+			
+			response = mapper.writeValueAsString(kycResponse);
+			return new ResponseEntity<String>(response, HttpStatus.OK);
+		}
+}
+
+
